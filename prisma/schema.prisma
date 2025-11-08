@@ -1,0 +1,122 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+//
+// ─── ENUMS ──────────────────────────────────────────────────────────────────────
+//
+
+enum Interval {
+  DAILY
+  WEEKLY
+}
+
+enum IndicatorType {
+  EMA
+  SMA
+}
+
+enum StrategyType {
+  EMA_CROSSOVER
+  SMA_CROSSOVER
+  MOMENTUM_250D
+}
+
+//
+// ─── CORE MODELS ────────────────────────────────────────────────────────────────
+//
+
+model Ticker {
+  id          Int              @id @default(autoincrement())
+  symbol      String           @unique
+  name        String
+  currency    String?
+  lastUpdated DateTime?
+  candles     Candle[]
+  strategies  Strategy[]
+  backtests   BacktestResult[]
+
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+}
+
+model Candle {
+  id         Int          @id @default(autoincrement())
+  tickerId   Int
+  interval   Interval
+  date       DateTime
+  open       Float?
+  high       Float?
+  low        Float?
+  close      Float
+  volume     Float?
+
+  indicators Indicator[]
+  ticker     Ticker       @relation(fields: [tickerId], references: [id], onDelete: Cascade)
+
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  @@unique([tickerId, interval, date])
+  @@index([tickerId, interval, date])
+}
+
+model Indicator {
+  id            Int             @id @default(autoincrement())
+  candleId      Int
+  type          IndicatorType
+  period        Int
+  value         Float
+  candle        Candle          @relation(fields: [candleId], references: [id], onDelete: Cascade)
+
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  @@unique([candleId, type, period])
+  @@index([type, period])
+}
+
+model Strategy {
+  id            Int          @id @default(autoincrement())
+  name          String
+  tickerId      Int
+  interval      Interval
+
+  /// "price" or like "EMA_10", "SMA_50", etc.
+  buyIndicator  String
+  sellIndicator String
+
+  backtests     BacktestResult[]
+  ticker        Ticker       @relation(fields: [tickerId], references: [id], onDelete: Cascade)
+
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@index([tickerId, interval])
+}
+
+model BacktestResult {
+  id            Int        @id @default(autoincrement())
+  tickerId      Int
+  strategyId    Int
+  startDate     DateTime
+  endDate       DateTime
+  totalReturn   Float
+  maxDrawdown   Float
+  sharpeRatio   Float?
+  tradesCount   Int?
+
+  ticker        Ticker     @relation(fields: [tickerId], references: [id], onDelete: Cascade)
+  strategy      Strategy   @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  @@unique([tickerId, strategyId, startDate, endDate])
+  @@index([tickerId, strategyId])
+}
