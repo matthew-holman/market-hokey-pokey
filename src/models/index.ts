@@ -7,4 +7,4 @@ export type {
   Interval,
   IndicatorType,
   StrategyType,
-} from '@prisma/client';
+} from 'src/generated/prisma';
