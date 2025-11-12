@@ -2,14 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import YahooFinance from 'yahoo-finance2';
 
-type YfSearchResult = {
-  symbol: string;
-  shortname: string;
-  exchange: string;
-  longname: string;
-  quoteType: string;
-};
-
 @Injectable()
 class YahooMarketDataService {
   private readonly yf = new YahooFinance();
@@ -23,15 +15,20 @@ class YahooMarketDataService {
   ): Promise<Prisma.TickerCreateInput | null> {
     const symbol = rawSymbol.trim().toUpperCase();
 
-    // 1) Validate with `search` (reliable in EU)
-    const results = await this.yf.search(symbol, {
+    const results = (await this.yf.search(symbol, {
       quotesCount: 5,
       newsCount: 0,
       enableFuzzyQuery: false,
-    });
+    })) as {
+      quotes?: Array<{
+        symbol?: string;
+        longname?: string;
+        shortname?: string;
+      }>;
+    };
 
-    const match: YfSearchResult | undefined = (results?.quotes ?? []).find(
-      (q: YfSearchResult) => q.symbol?.toUpperCase() === symbol,
+    const match = results.quotes?.find(
+      (q) => q.symbol?.toUpperCase() === symbol,
     );
 
     if (!match) {
