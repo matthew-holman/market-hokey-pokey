@@ -14,6 +14,10 @@ export class TickersService {
     return this.prisma.ticker.findUnique({ where: { id } });
   }
 
+  async findBySymbol(symbol: string): Promise<Ticker | null> {
+    return this.prisma.ticker.findUnique({ where: { symbol } });
+  }
+
   async create(symbol: string, name: string, currency?: string) {
     return this.prisma.ticker.create({
       data: { symbol, name, currency },

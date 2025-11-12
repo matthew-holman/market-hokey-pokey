@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { TickersController } from '@/tickers/tickers.controller';
 import { PrismaService } from 'prisma/prisma.service';
 import { TickersService } from '@/tickers/tickers.service';
+import YahooMarketDataService from '@/market-data/yahoo-market-data/yahoo-market-data.service';
 
 describe('TickersController', () => {
   let controller: TickersController;
@@ -9,7 +10,7 @@ describe('TickersController', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [TickersController],
-      providers: [TickersService, PrismaService],
+      providers: [TickersService, PrismaService, YahooMarketDataService],
     }).compile();
 
     controller = module.get<TickersController>(TickersController);

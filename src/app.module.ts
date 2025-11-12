@@ -6,6 +6,7 @@ import { PrismaModule } from '../prisma/prisma.module';
 import { CandlesModule } from './candles/candles.module';
 import { StrategiesModule } from './strategies/strategies.module';
 import { IndicatorsModule } from './indicators/indicators.module';
+import { MarketDataModule } from './market-data/market-data.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { IndicatorsModule } from './indicators/indicators.module';
     CandlesModule,
     StrategiesModule,
     IndicatorsModule,
+    MarketDataModule,
   ],
   controllers: [AppController],
   providers: [AppService],
