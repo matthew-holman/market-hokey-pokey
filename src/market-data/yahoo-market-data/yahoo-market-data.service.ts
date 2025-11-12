@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { Interval, Prisma } from '@prisma/client';
 import YahooFinance from 'yahoo-finance2';
 
 @Injectable()
@@ -61,6 +61,55 @@ class YahooMarketDataService {
         currency: 'USD',
       };
     }
+  }
+
+  async fetchCandles(
+    symbol: string,
+    interval: Interval,
+    yearsOfHistory: number = 2,
+  ): Promise<Prisma.CandleUncheckedCreateInput[]> {
+    const yfInterval = interval === 'DAILY' ? '1d' : '1wk';
+
+    try {
+      const chart = await this.yf.chart(symbol, {
+        period1: YahooMarketDataService.subtractYears(
+          new Date(),
+          yearsOfHistory,
+        ),
+        period2: new Date(),
+        interval: yfInterval,
+      });
+
+      const quotes = chart.quotes ?? [];
+
+      // Filter out incomplete data (no close)
+      const validQuotes = quotes.filter(
+        (q): q is typeof q & { close: number } =>
+          q.close !== null && q.close !== undefined,
+      );
+
+      return validQuotes.map((q) => ({
+        tickerId: 0, // injected later by caller
+        interval,
+        date: q.date,
+        open: q.open ?? undefined,
+        high: q.high ?? undefined,
+        low: q.low ?? undefined,
+        close: q.close,
+        volume: q.volume ?? undefined,
+      }));
+    } catch (error) {
+      console.error(
+        `Failed to fetch candles for ${symbol}:`,
+        (error as Error).message,
+      );
+      return [];
+    }
+  }
+
+  private static subtractYears(date: Date = new Date(), years: number = 2) {
+    date.setFullYear(date.getFullYear() - years);
+    return date;
   }
 }
 export default YahooMarketDataService;

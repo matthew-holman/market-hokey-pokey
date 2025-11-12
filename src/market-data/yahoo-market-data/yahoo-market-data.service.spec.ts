@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import YahooMarketDataService from './yahoo-market-data.service';
+import { Interval } from '@prisma/client';
 
 describe('YahooMarketDataService', () => {
   let service: YahooMarketDataService;
@@ -28,5 +29,17 @@ describe('YahooMarketDataService', () => {
   it.skip('fetchTicker() should return null for an invalid symbol', async () => {
     const ticker = await service.fetchTicker('FAKE_TICKER_123');
     expect(ticker).toBeNull();
+  });
+
+  it.skip('should fetch recent candles for ^GSPC', async () => {
+    const candles = await service.fetchCandles('^GSPC', Interval.WEEKLY, 2);
+
+    expect(Array.isArray(candles)).toBe(true);
+    expect(candles.length).toBe(106);
+
+    const first = candles[0];
+    expect(first).toHaveProperty('close');
+    expect(first.close).not.toBeNull();
+    expect(first.interval).toBe(Interval.WEEKLY);
   });
 });
